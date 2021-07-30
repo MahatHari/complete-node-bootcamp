@@ -31,10 +31,28 @@ const getDocPic = async () => {
     await writeFilePromise('dog-img.txt', res.body.message);
     console.log('Random dog image link saved');
   } catch (err) {
-    console.log(err);
+    console.log(err.message);
+    throw err;
   }
+  return '2: Dog pic Returned';
 };
-getDocPic();
+//getDocPic();
+
+//IIFE function, Immediately Invoked Function Expression
+(async () => {
+  try {
+    console.log('1: Will get dog pics');
+    const x = await getDocPic();
+    console.log(x);
+    console.log('3: Done getting dog pics');
+  } catch (err) {
+    console.log('ERROR');
+  }
+})();
+
+/* getDocPic()
+  .then((x) => console.log(x))
+  .catch((err) => console.log(err)); */
 
 /* readFilePromise(`${__dirname}/dog.txt`)
   .then((data) => {
