@@ -8,7 +8,12 @@ const app = express();
 //1. MIDDLEWARES
 app.use(express.json());
 //third party middle ware => morgan to log
-app.use(morgan('dev'));
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
+//Serving static files
+app.use(express.static(`${__dirname}/public`));
 
 //2.custom middle ware
 app.use((req, res, next) => {
@@ -24,7 +29,5 @@ app.use((req, res, next) => {
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 //4.RUN SERVER
-const port = 8000;
-app.listen(port, () => {
-  console.log('Listening to port ', port);
-});
+
+module.exports = app;
