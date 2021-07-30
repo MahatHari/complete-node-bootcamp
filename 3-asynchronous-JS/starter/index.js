@@ -14,4 +14,5 @@ fs.readFile(`${__dirname}/dog.txt`, (err, data) => {
         console.log('writtend');
       });
     });
+  if (err) return console.log('file not found');
 });
