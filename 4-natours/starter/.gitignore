@@ -1,2 +1,3 @@
 node_modules
-cofig.env
+config.env
+*.env
