@@ -10,6 +10,14 @@ const router = express.Router();
 // add it to the post handler stack
 // tourController.checkBody middleware inside .post
 
+//Creating Popular route
+router
+  .route('/top-5-cheap')
+  .get(
+    tourController.aliasTopTours,
+    tourController.getAllTours
+  );
+
 router
   .route('/')
   .get(tourController.getAllTours)

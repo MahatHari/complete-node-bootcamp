@@ -1,4 +1,5 @@
 const Tour = require('../models/tourModel');
+const APIFeatures = require('../utils/apiFeatures');
 
 /* // Reading Data, on top level
 const tours = JSON.parse(
@@ -29,58 +30,26 @@ exports.checkID = (req, res, next, val) => {
   next();
 }; */
 
+exports.aliasTopTours = (req, res, next) => {
+  req.query.limit = '5';
+  req.query.sort = '-ratingsAverage, price';
+  req.query.fields =
+    'name, price, ratingsAverage, summary, difficulty ';
+  next();
+};
+
 // Route Handlers
 exports.getAllTours = async (req, res) => {
   try {
-    // BUILD Querry
-
-    //1.  Filtering
-    // eslint-disable-next-line node/no-unsupported-features/es-syntax
-    const queryObj = { ...req.query };
-    const excludedFileds = [
-      'page',
-      'sort',
-      'limit',
-      'fields',
-    ];
-    excludedFileds.forEach((el) => delete queryObj[el]);
-    //2. Advanced filtering
-    let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(
-      /\b(gte|gt|lte|lt)\b/g,
-      (match) => `$${match}`
-    );
-    let query = Tour.find(JSON.parse(queryStr));
-
-    //Sorting
-    if (req.query.sort) {
-      const sortBy = req.query.sort.split(',').join(' ');
-      query = query.sort(sortBy);
-    } else {
-      query = query.sort('name');
-    }
-
-    //Limiting Fields
-    if (req.query.fields) {
-      const fields = req.query.fields.split(',').join(' ');
-      query = query.select(fields);
-    } else {
-      query = query.select('-__v');
-    }
-    //Pagination
-    const page = req.query.page * 1 || 1; // casts to number
-    const limit = req.query.limit * 1 || 100;
-    const skip = (page - 1) * limit;
-    query = query.skip(skip).limit(limit);
-    if (req.query.page) {
-      const numTuours = await Tour.countDocuments();
-      if (skip >= numTuours)
-        throw new Error('This page does not exists');
-    }
-
     //Execute Query
-    const tours = await query;
 
+    const features = new APIFeatures(Tour.find(), req.query)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+
+    const tours = await features.query;
     /* 
       const tours = await Tour.find()
       .where('duration')
@@ -96,7 +65,7 @@ exports.getAllTours = async (req, res) => {
       },
     });
   } catch (err) {
-    res.send(404).json({
+    res.status(404).json({
       status: 'fail',
       message: err,
     });
@@ -112,7 +81,7 @@ exports.getTour = async (req, res) => {
       },
     });
   } catch (err) {
-    res.send(404).json({
+    res.status(404).json({
       status: 'fail',
       message: err,
     });
@@ -166,6 +135,17 @@ exports.deleteTour = async (req, res) => {
       status: 'success',
       data: null,
     });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: 'Invalid data sent',
+    });
+  }
+};
+
+exports.getTourStats = async (req, res) => {
+  try {
+    const stats = Tour.aggregate([]);
   } catch (err) {
     res.status(400).json({
       status: 'fail',
