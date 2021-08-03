@@ -3,6 +3,8 @@ const morgan = require('morgan');
 
 const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
+const AppError = require('./utils/appError');
+const globalErrorHandler = require('./controllers/errorController');
 
 const app = express();
 //1. MIDDLEWARES
@@ -15,11 +17,6 @@ if (process.env.NODE_ENV === 'development') {
 //Serving static files
 app.use(express.static(`${__dirname}/public`));
 
-//2.custom middle ware
-app.use((req, res, next) => {
-  console.log('Hello from the middleware :');
-  next();
-});
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
@@ -28,6 +25,17 @@ app.use((req, res, next) => {
 //3.ROUTES
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
-//4.RUN SERVER
+
+//NOT FOUND Routes
+app.all('*', (req, res, next) => {
+  next(
+    new AppError(
+      `cant find ${req.originalUrl} on this server`,
+      404
+    )
+  );
+});
+
+app.use(globalErrorHandler);
 
 module.exports = app;

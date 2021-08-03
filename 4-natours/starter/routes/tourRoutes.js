@@ -2,6 +2,7 @@ const express = require('express');
 const tourController = require('../controllers/tourController');
 
 const router = express.Router();
+
 //router.param('id', tourController.checkID);
 
 //create a checkbody middleware
@@ -17,7 +18,16 @@ router
     tourController.aliasTopTours,
     tourController.getAllTours
   );
+//Creating stats route
+router
+  .route('/tour-stats')
+  .get(tourController.getTourStats);
+//Busy time of year
+router
+  .route('/monthly-plan/:year')
+  .get(tourController.getMonthlyPlan);
 
+//basic routes
 router
   .route('/')
   .get(tourController.getAllTours)
