@@ -12,34 +12,49 @@ const signToken = (id) =>
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 
-exports.signup = async (req, res, next) => {
-  const { name, email, password, passwordConfirm } = {
+const createAndSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() +
+        process.env.JWT_COOKIE_EXPIRES_IN *
+          24 *
+          60 *
+          60 *
+          1000
+    ),
+    httpOnly: true,
+  };
+  // https only on production
+  if (process.env.NODE_ENV === 'production') {
+    cookieOptions.secure = true;
+  }
+  res.cookie('jwt', token, cookieOptions);
+  //Remove password from output
+  user.password = undefined;
+  res.status(statusCode).json({
+    status: 'success',
+    data: {
+      user,
+    },
+    token,
+  });
+};
+
+exports.signup = catchAsync(async (req, res, next) => {
+  const { name, email, password, passwordConfirm, role } = {
     // eslint-disable-next-line node/no-unsupported-features/es-syntax
     ...req.body,
   };
   const newUser = await User.create({
     name,
     email,
-
     password,
     passwordConfirm,
+    role,
   });
-  const token = signToken(newUser._id);
-  try {
-    res.status(201).json({
-      status: 'success',
-      token,
-      data: {
-        user: newUser,
-      },
-    });
-  } catch (e) {
-    res.status(400).json({
-      status: 'fail',
-      message: 'Invalid data sent',
-    });
-  }
-};
+  createAndSendToken(newUser, 201, res);
+});
 
 exports.login = async (req, res, next) => {
   const { email, password } = req.body;
@@ -63,11 +78,7 @@ exports.login = async (req, res, next) => {
   }
 
   //3 If everything ok, send token to client
-  const token = signToken(user._id);
-  res.status(200).json({
-    status: 'success',
-    token,
-  });
+  createAndSendToken(user, 200, res);
 };
 
 //Middleware functions
@@ -98,7 +109,7 @@ exports.protect = async (req, res, next) => {
   // 3. Check if user still exists
   const currentUser = await User.findById(decoded.id);
   if (!currentUser) {
-    return next(new Error('User no longer exist ', 401));
+    return next(new AppError('User no longer exist ', 401));
   }
   // 4. Check if user changed password after the token was issued
   if (currentUser.changedPasswordAfter(decoded.iat)) {
@@ -209,10 +220,29 @@ exports.resetPassword = async (req, res, next) => {
 
   await user.save();
   //4. log the user in send JWT
-  const token = signToken(user._id);
-
-  res.status(200).json({
-    status: 'sucess',
-    token,
-  });
+  createAndSendToken(user, 200, res);
 };
+
+exports.updatePassword = catchAsync(
+  async (req, res, next) => {
+    //1. Get user from collection
+    const user = await User.findById(req.user.id).select(
+      '+password'
+    );
+    //2. check if POSTed current password is correct
+    if (
+      !user.correctPassword(
+        req.body.passwordCurrent,
+        user.password
+      )
+    ) {
+      return next(new AppError(' password in correct'));
+    }
+    //3. if so update password
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+    await user.save();
+    //4. log user in
+    createAndSendToken(user, 200, res);
+  }
+);
