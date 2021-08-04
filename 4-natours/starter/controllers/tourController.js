@@ -1,6 +1,7 @@
 const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
 const AppError = require('../utils/appError');
+const catchAsync = require('../utils/catchAsync');
 
 /* // Reading Data, on top level
 const tours = JSON.parse(
@@ -34,9 +35,6 @@ exports.checkID = (req, res, next, val) => {
 // creating a separate function to catch eerror
 // can be exported as module from another file and replace
 // all later catch block with this code
-const catchAsync = (fn) => (req, res, next) => {
-  fn(req, res, next).catch((err) => next(err));
-};
 
 exports.aliasTopTours = (req, res, next) => {
   req.query.limit = '5';
