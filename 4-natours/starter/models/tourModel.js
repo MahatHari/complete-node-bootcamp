@@ -1,5 +1,6 @@
 const slugify = require('slugify');
 const mongoose = require('mongoose');
+//const User = require('./userModel');
 
 //Schema for Data model
 const tourSchema = new mongoose.Schema(
@@ -31,7 +32,7 @@ const tourSchema = new mongoose.Schema(
       type: String,
       required: [true, 'A tour must have difficulty level'],
       enum: {
-        values: ['easy', 'medium', 'difficulty'],
+        values: ['easy', 'medium', 'difficult'],
         message:
           'Difficulty is either: easy, medium, difficulty',
       },
@@ -85,6 +86,38 @@ const tourSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    startLocation: {
+      //GeoJSON
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point'],
+      },
+      coordinates: [Number],
+      address: String,
+      description: String,
+    },
+
+    locations: [
+      {
+        type: {
+          type: String,
+          default: 'Point',
+          enum: ['Point'],
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number,
+      },
+    ],
+    //guides: Array,
+    guides: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User',
+      },
+    ],
   },
 
   {
@@ -105,6 +138,16 @@ tourSchema.pre('save', function (next) {
   next();
 });
 
+/* //Embeding guides in tours 
+tourSchema.pre('save', async function (next) {
+  const guidesPromises = this.guides.map(
+    async (id) => await User.findById(id)
+  );
+  this.guides = await Promise.all(guidesPromises);
+}); */
+
+// child referencing guides
+
 /* //post middleware
 tourSchema.post('save', (doc, next) => {
   console.log(doc);
@@ -112,20 +155,28 @@ tourSchema.post('save', (doc, next) => {
 }); */
 
 // QUERRY MIDDLEWARE
+//populate guide field
+tourSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: 'guides',
+    select: '-__v -passwordChangedAt',
+  });
+  next();
+});
 tourSchema.pre('find', function (next) {
   this.find({ secretTour: { $ne: true } });
   next();
 });
 
 //for all find query
-tourSchema.pre('/^find/', function (next) {
+tourSchema.pre(/^find/, function (next) {
   this.find({ secretTour: { $ne: true } });
   this.start = Date.now();
   next();
 });
 
-// using post query middle ware
-tourSchema.post('/^find/', function (docs, next) {
+// using post query middle ware, as an example
+tourSchema.post(/^find/, function (next) {
   console.log(
     `Query took ${Date.now() - this.start} miliseconds`
   );
