@@ -1,5 +1,6 @@
 const slugify = require('slugify');
 const mongoose = require('mongoose');
+const Review = require('../models/reviewModel');
 //const User = require('./userModel');
 
 //Schema for Data model
@@ -132,6 +133,13 @@ tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
 });
 
+//connecting reivew schema with tour, on _id, virtual populate
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour',
+  localField: '_id',
+});
+
 // DOCUMENT MIDDLEWARE: runs before .save() and .create()
 tourSchema.pre('save', function (next) {
   this.slug = slugify(this.name, { lower: true });
@@ -181,7 +189,6 @@ tourSchema.post(/^find/, function (next) {
     `Query took ${Date.now() - this.start} miliseconds`
   );
   //console.log(docs);
-  next();
 });
 
 //AGGREGATION MIDDLEWARE

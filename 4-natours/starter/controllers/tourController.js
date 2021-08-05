@@ -2,6 +2,7 @@ const Tour = require('../models/tourModel');
 const APIFeatures = require('../utils/apiFeatures');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
+const factory = require('./handlerFactory');
 
 /* // Reading Data, on top level
 const tours = JSON.parse(
@@ -78,7 +79,9 @@ exports.getAllTours = async (req, res) => {
   }
 };
 exports.getTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findById(req.params.id);
+  const tour = await Tour.findById(req.params.id).populate(
+    'reviews'
+  );
   /* .populate('guides')
     .select('-__v'); */ //Tour.findOne({_id:req.params.id})
   if (!tour) {
@@ -128,7 +131,7 @@ exports.createTour = catchAsync(async (req, res) => {
     },
   });
 });
-exports.deleteTour = async (req, res) => {
+/* exports.deleteTour = async (req, res) => {
   try {
     await Tour.findByIdAndDelete(req.params.id);
     res.status(204).json({
@@ -141,7 +144,8 @@ exports.deleteTour = async (req, res) => {
       message: 'Invalid data sent',
     });
   }
-};
+}; */
+exports.deleteTour = factory.deleteOne(Tour);
 
 exports.getTourStats = async (req, res) => {
   try {
