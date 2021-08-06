@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
+
 router.post(
   '/forgotPassword',
   authController.forgotPassword
@@ -20,6 +21,12 @@ router.patch(
   authController.updatePassword
 );
 
+router.get(
+  '/me',
+  authController.protect,
+  userController.getMe,
+  userController.getUser
+);
 router.patch(
   '/updateMe',
   authController.protect,

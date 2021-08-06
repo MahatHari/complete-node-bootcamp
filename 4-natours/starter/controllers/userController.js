@@ -1,6 +1,7 @@
 const AppError = require('../utils/appError');
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
+const factory = require('./handlerFactory');
 
 const filterObj = (obj, ...allowedFiled) => {
   const newObj = {};
@@ -13,15 +14,15 @@ const filterObj = (obj, ...allowedFiled) => {
 };
 
 // Router Handlers
-exports.getAllUsers = async (req, res) => {
-  const users = await User.find();
-  res.status(500).json({
-    status: 'sucess',
-    data: {
-      users,
-    },
-  });
-};
+// exports.getAllUsers = async (req, res) => {
+//   const users = await User.find();
+//   res.status(500).json({
+//     status: 'sucess',
+//     data: {
+//       users,
+//     },
+//   });
+// };
 
 exports.updateMe = async (req, res, next) => {
   //1. create error if tries to post password data
@@ -63,28 +64,23 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
   });
 });
 
-//
-exports.getUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'route no implemented yet',
-  });
+//Get me
+exports.getMe = (req, res, next) => {
+  req.params.id = req.user.id;
+  next();
 };
+
+//
+
 exports.createUser = (req, res) => {
   res.status(500).json({
     status: 'error',
-    message: 'route no implemented yet',
+    message: 'Please use /signup Instead',
   });
 };
-exports.updateUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'route no implemented yet',
-  });
-};
-exports.deleteUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'route no implemented yet',
-  });
-};
+
+// Do Not update password with this
+exports.updateUser = factory.updateOne(User);
+exports.getUser = factory.getOne(User);
+exports.getAllUsers = factory.getAll(User);
+exports.deleteUser = factory.deleteOne(User);
